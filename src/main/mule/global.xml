@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="2adfef11-f605-4cf2-828e-e3f561abc820" basePath="/course/api" >
+		<http:listener-connection host="0.0.0.0" port="${api.config.port}" />
+	</http:listener-config>
+	<apikit:config outboundHeadersMapName="outboundHeadersMapName" httpStatusVarName="httpStatus" doc:name="Router" doc:id="af185c9f-5d0a-427e-b936-663c2e679dd2" name="RouterRest" api="api\rest.raml" >
+		<apikit:flow-mappings>
+			<apikit:flow-mapping resource="/teste" action="get" flow-ref="testeFlow" />
+			<apikit:flow-mapping resource="/demo-01/rest" action="get" flow-ref="demo-01-rest-flow" />
+			<apikit:flow-mapping resource="/demo-01/soap" action="get" flow-ref="demo-01-soap-flow" />
+			<apikit:flow-mapping resource="/demo-02/insert" action="post" flow-ref="demo-02-insert-flow" />
+			<apikit:flow-mapping resource="/demo-03/consultar" action="post" flow-ref="demo-03-consulta-flow" />
+		</apikit:flow-mappings>
+	</apikit:config>
+	<apikit:config outboundHeadersMapName="outboundHeadersMapName" httpStatusVarName="httpStatus" doc:name="Router" doc:id="6935f273-4a06-47ac-9a1e-6871cd317df2" name="Router-component" api="api\component.raml" >
+		<apikit:flow-mappings >
+			<apikit:flow-mapping resource="/teste2" action="get" flow-ref="testeFlow" />
+		</apikit:flow-mappings>
+	</apikit:config>
+	<configuration-properties doc:name="Configuration properties" doc:id="8467f2eb-955c-4e6e-991c-10f538f2ef52" file="Local.yaml" />
+	<http:request-config name="SFDC_AUTH" doc:name="HTTP Request configuration" doc:id="12b7fc64-a2eb-414a-891f-a3e030ae9038" >
+		<http:request-connection protocol="HTTPS" host="${sfdc.auth.host}" />
+	</http:request-config>
+	<http:request-config name="SFDC_ENDPOINT" doc:name="HTTP Request configuration" doc:id="ae4fa5ee-1b70-4f17-b426-a548d846774e" >
+		<http:request-connection protocol="HTTPS" host="${sfdc.endpoint.host}" />
+	</http:request-config>
+</mule>

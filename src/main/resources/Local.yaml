@@ -1,0 +1,14 @@
+api:
+  config:
+    basepath: "course"
+    port: "8081"
+sfdc:
+  auth:
+    host: "login.salesforce.com"
+    username: "josemauricio.gomes@gmail.com"
+    password: "Tit@m125"
+    security_token: "7u5KS4ElPLsOgPzrx2F26ecp3"
+    client_id: "3MVG9gtDqcOkH4PIQFgg6Qaei_lnmWAl9fOWHo5nu3E.oz8gyZPUs3949W3x3HLD3oRU5ZQQJ8h.w6Dz_tOod"
+    client_secret: "91332908F0DA0645483551D3A9CD55979A134AA169507B743AC3927EE15B0E98"
+  endpoint:
+    host: "mauriciooliveira-dev-ed.develop.my.salesforce.com"
