@@ -1,0 +1,1681 @@
+{
+	"info": {
+		"_postman_id": "0904cc5c-1124-4951-8e9a-0836b460c5c7",
+		"name": "Curso Mule - Sales",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Salesforce",
+			"item": [
+				{
+					"name": "Auth",
+					"item": [
+						{
+							"name": "Rest Login",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"const jsonData = pm.response.json();\r",
+											"\r",
+											"const context = pm.environment.name ? pm.environment : pm.collectionVariables;\r",
+											"context.set(\"_accessToken\", jsonData.access_token);\r",
+											"context.set(\"_urlEndpoint\", jsonData.instance_url);\r",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{urlAuth}}/services/oauth2/token?grant_type=password&client_id={{clientId}}&client_secret={{clientSecret}}&username={{username}}&password={{password}}{{secretToken}}",
+									"host": [
+										"{{urlAuth}}"
+									],
+									"path": [
+										"services",
+										"oauth2",
+										"token"
+									],
+									"query": [
+										{
+											"key": "grant_type",
+											"value": "password"
+										},
+										{
+											"key": "client_id",
+											"value": "{{clientId}}"
+										},
+										{
+											"key": "client_secret",
+											"value": "{{clientSecret}}"
+										},
+										{
+											"key": "username",
+											"value": "{{username}}"
+										},
+										{
+											"key": "password",
+											"value": "{{password}}{{secretToken}}"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Soap Login",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"const result = xml2Json(pm.response.text())[\"soapenv:Envelope\"][\"soapenv:Body\"].loginResponse.result;",
+											"const url = result.serverUrl.split(\"/\");",
+											"",
+											"const context = pm.environment.name ? pm.environment : pm.collectionVariables;",
+											"context.set(\"_accessToken\", result.sessionId);",
+											"context.set(\"_urlEndpoint\", url[0] + \"//\" + url[2]);"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"name": "Content-Type",
+										"value": "text/xml",
+										"type": "text"
+									},
+									{
+										"key": "SOAPAction",
+										"value": "login",
+										"type": "text"
+									},
+									{
+										"key": "charset",
+										"value": "UTF-8",
+										"type": "text",
+										"disabled": true
+									},
+									{
+										"key": "Accept",
+										"value": "text/xml",
+										"type": "text",
+										"disabled": true
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n<env:Envelope xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\"\n    xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n    xmlns:env=\"http://schemas.xmlsoap.org/soap/envelope/\">\n  <env:Body>\n    <n1:login xmlns:n1=\"urn:partner.soap.sforce.com\">\n      <n1:username><![CDATA[{{username}}]]></n1:username>\n      <n1:password><![CDATA[{{password}}{{secretToken}}]]></n1:password>\n    </n1:login>\n  </env:Body>\n</env:Envelope>"
+								},
+								"url": {
+									"raw": "{{urlAuth}}/services/Soap/u/{{version}}",
+									"host": [
+										"{{urlAuth}}"
+									],
+									"path": [
+										"services",
+										"Soap",
+										"u",
+										"{{version}}"
+									]
+								},
+								"description": "Logs in to the login server and starts a client session.\n\nMake sure to set the `url`, `username`, `password` and `secretToken` environment variables before sending this request.\nOn success, the request will automatically collect your authentication token for later use."
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Batch",
+					"item": [
+						{
+							"name": "V1",
+							"item": [
+								{
+									"name": "CSV",
+									"item": [
+										{
+											"name": "CSV Bulk Create Job",
+											"event": [
+												{
+													"listen": "test",
+													"script": {
+														"exec": [
+															"if(pm.response.headers.get(\"Content-Type\").indexOf(\"xml\") !== -1) {",
+															"    var jsonData = xml2Json(pm.response.text());",
+															"    pm.environment.set(\"_batchJobId\", jsonData['jobInfo']['id']);    ",
+															"}",
+															"",
+															"if(pm.response.headers.get(\"Content-Type\").indexOf(\"json\") !== -1) {",
+															"    var jsonData = pm.response.json();",
+															"    pm.environment.set(\"_batchJobId\", jsonData.id);",
+															"}",
+															"",
+															""
+														],
+														"type": "text/javascript"
+													}
+												}
+											],
+											"request": {
+												"method": "POST",
+												"header": [
+													{
+														"key": "X-SFDC-Session",
+														"value": "{{_accessToken}}",
+														"type": "text"
+													},
+													{
+														"key": "Content-Type",
+														"value": "application/json",
+														"type": "text"
+													},
+													{
+														"key": "charset",
+														"value": "UTF-8",
+														"type": "text"
+													},
+													{
+														"key": "Sforce-Disable-Batch-Retry",
+														"value": "FALSE",
+														"type": "text",
+														"disabled": true
+													},
+													{
+														"key": "Sforce-Line-Ending",
+														"value": "CRLF",
+														"type": "text",
+														"disabled": true
+													},
+													{
+														"key": "Sforce-Enable-PKChunking",
+														"value": "FALSE",
+														"type": "text",
+														"disabled": true
+													},
+													{
+														"key": "chunkSize",
+														"value": "10000",
+														"type": "text",
+														"disabled": true
+													},
+													{
+														"key": "Accept-Encoding",
+														"value": "gzip",
+														"type": "text",
+														"disabled": true
+													},
+													{
+														"key": "Content-Encoding",
+														"value": "gzip",
+														"type": "text",
+														"disabled": true
+													}
+												],
+												"body": {
+													"mode": "raw",
+													"raw": "{\n  \"operation\" : \"insert\",\n  \"object\" : \"Account\",\n  \"contentType\" : \"CSV\"\n}"
+												},
+												"url": {
+													"raw": "{{_urlEndpoint}}/services/async/51.0/job",
+													"host": [
+														"{{_urlEndpoint}}"
+													],
+													"path": [
+														"services",
+														"async",
+														"51.0",
+														"job"
+													]
+												}
+											},
+											"response": []
+										},
+										{
+											"name": "CSV Bulk Create Batch",
+											"event": [
+												{
+													"listen": "test",
+													"script": {
+														"exec": [
+															"if(pm.response.headers.get(\"Content-Type\").indexOf(\"xml\") !== -1) {",
+															"    var jsonData = xml2Json(pm.response.text());",
+															"    pm.environment.set(\"_batchId\", jsonData.batchInfo.id);    ",
+															"}",
+															"",
+															"if(pm.response.headers.get(\"Content-Type\").indexOf(\"json\") !== -1) {",
+															"    var jsonData = pm.response.json();",
+															"    pm.environment.set(\"_batchId\", jsonData.id);",
+															"}"
+														],
+														"type": "text/javascript"
+													}
+												}
+											],
+											"request": {
+												"method": "POST",
+												"header": [
+													{
+														"key": "X-SFDC-Session",
+														"value": "{{_accessToken}}",
+														"type": "text"
+													},
+													{
+														"key": "Content-Type",
+														"value": "text/csv",
+														"type": "text"
+													},
+													{
+														"key": "charset",
+														"value": "UTF-8",
+														"type": "text"
+													}
+												],
+												"body": {
+													"mode": "raw",
+													"raw": "name\r\nTeste Postman CSV 1\r\nTeste Postman CSV 2",
+													"options": {
+														"raw": {
+															"language": "text"
+														}
+													}
+												},
+												"url": {
+													"raw": "{{_urlEndpoint}}/services/async/51.0/job/{{_batchJobId}}/batch",
+													"host": [
+														"{{_urlEndpoint}}"
+													],
+													"path": [
+														"services",
+														"async",
+														"51.0",
+														"job",
+														"{{_batchJobId}}",
+														"batch"
+													]
+												}
+											},
+											"response": []
+										}
+									]
+								},
+								{
+									"name": "XML",
+									"item": [
+										{
+											"name": "XML Bulk Create Job",
+											"event": [
+												{
+													"listen": "test",
+													"script": {
+														"exec": [
+															"if(pm.response.headers.get(\"Content-Type\").indexOf(\"xml\") !== -1) {",
+															"    var jsonData = xml2Json(pm.response.text());",
+															"    pm.environment.set(\"_batchJobId\", jsonData['jobInfo']['id']);    ",
+															"}",
+															"",
+															"if(pm.response.headers.get(\"Content-Type\").indexOf(\"json\") !== -1) {",
+															"    var jsonData = pm.response.json();",
+															"    pm.environment.set(\"_batchJobId\", jsonData.id);",
+															"}",
+															"",
+															""
+														],
+														"type": "text/javascript"
+													}
+												}
+											],
+											"request": {
+												"method": "POST",
+												"header": [
+													{
+														"key": "X-SFDC-Session",
+														"value": "{{_accessToken}}"
+													},
+													{
+														"key": "Content-Type",
+														"name": "Content-Type",
+														"value": "application/json",
+														"type": "text"
+													},
+													{
+														"key": "charset",
+														"value": "UTF-8"
+													},
+													{
+														"key": "Sforce-Disable-Batch-Retry",
+														"value": "FALSE",
+														"disabled": true
+													},
+													{
+														"key": "Sforce-Line-Ending",
+														"value": "CRLF",
+														"disabled": true
+													},
+													{
+														"key": "Sforce-Enable-PKChunking",
+														"value": "FALSE",
+														"disabled": true
+													},
+													{
+														"key": "chunkSize",
+														"value": "10000",
+														"type": "text",
+														"disabled": true
+													},
+													{
+														"key": "Accept-Encoding",
+														"value": "gzip",
+														"disabled": true
+													},
+													{
+														"key": "Content-Encoding",
+														"value": "gzip",
+														"disabled": true
+													}
+												],
+												"body": {
+													"mode": "raw",
+													"raw": "{\n  \"operation\" : \"insert\",\n  \"object\" : \"Account\",\n  \"contentType\" : \"XML\"\n}"
+												},
+												"url": {
+													"raw": "{{_urlEndpoint}}/services/async/51.0/job",
+													"host": [
+														"{{_urlEndpoint}}"
+													],
+													"path": [
+														"services",
+														"async",
+														"51.0",
+														"job"
+													]
+												}
+											},
+											"response": []
+										},
+										{
+											"name": "XML Bulk Create Batch",
+											"event": [
+												{
+													"listen": "test",
+													"script": {
+														"exec": [
+															"if(pm.response.headers.get(\"Content-Type\").indexOf(\"xml\") !== -1) {",
+															"    var jsonData = xml2Json(pm.response.text());",
+															"    pm.environment.set(\"_batchId\", jsonData.batchInfo.id);    ",
+															"}",
+															"",
+															"if(pm.response.headers.get(\"Content-Type\").indexOf(\"json\") !== -1) {",
+															"    var jsonData = pm.response.json();",
+															"    pm.environment.set(\"_batchId\", jsonData.id);",
+															"}"
+														],
+														"type": "text/javascript"
+													}
+												}
+											],
+											"request": {
+												"method": "POST",
+												"header": [
+													{
+														"key": "X-SFDC-Session",
+														"value": "{{_accessToken}}"
+													},
+													{
+														"key": "Content-Type",
+														"value": "application/xml"
+													},
+													{
+														"key": "Content-Type",
+														"value": "zip/csv",
+														"disabled": true
+													},
+													{
+														"key": "charset",
+														"value": "UTF-8"
+													},
+													{
+														"key": "Accept-Encoding",
+														"value": "gzip",
+														"disabled": true
+													},
+													{
+														"key": "Content-Encoding",
+														"value": "gzip",
+														"disabled": true
+													}
+												],
+												"body": {
+													"mode": "raw",
+													"raw": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<sObjects xmlns=\"http://www.force.com/2009/06/asyncapi/dataload\">\r\n   <sObject>\r\n      <name>Teste Postman XML 1</name>\r\n   </sObject>\r\n   <sObject>\r\n      <name>Teste Postman XML 2</name>\r\n   </sObject>\r\n</sObjects>",
+													"options": {
+														"raw": {
+															"language": "xml"
+														}
+													}
+												},
+												"url": {
+													"raw": "{{_urlEndpoint}}/services/async/51.0/job/{{_batchJobId}}/batch",
+													"host": [
+														"{{_urlEndpoint}}"
+													],
+													"path": [
+														"services",
+														"async",
+														"51.0",
+														"job",
+														"{{_batchJobId}}",
+														"batch"
+													]
+												}
+											},
+											"response": []
+										}
+									]
+								},
+								{
+									"name": "JSON",
+									"item": [
+										{
+											"name": "JSON Bulk Create Job",
+											"event": [
+												{
+													"listen": "test",
+													"script": {
+														"exec": [
+															"if(pm.response.headers.get(\"Content-Type\").indexOf(\"xml\") !== -1) {",
+															"    var jsonData = xml2Json(pm.response.text());",
+															"    pm.environment.set(\"_batchJobId\", jsonData['jobInfo']['id']);    ",
+															"}",
+															"",
+															"if(pm.response.headers.get(\"Content-Type\").indexOf(\"json\") !== -1) {",
+															"    var jsonData = pm.response.json();",
+															"    pm.environment.set(\"_batchJobId\", jsonData.id);",
+															"}",
+															"",
+															""
+														],
+														"type": "text/javascript"
+													}
+												}
+											],
+											"request": {
+												"method": "POST",
+												"header": [
+													{
+														"key": "X-SFDC-Session",
+														"value": "{{_accessToken}}"
+													},
+													{
+														"key": "Content-Type",
+														"name": "Content-Type",
+														"value": "application/json",
+														"type": "text"
+													},
+													{
+														"key": "charset",
+														"value": "UTF-8"
+													},
+													{
+														"key": "Sforce-Disable-Batch-Retry",
+														"value": "FALSE",
+														"disabled": true
+													},
+													{
+														"key": "Sforce-Line-Ending",
+														"value": "CRLF",
+														"disabled": true
+													},
+													{
+														"key": "Sforce-Enable-PKChunking",
+														"value": "FALSE",
+														"disabled": true
+													},
+													{
+														"key": "chunkSize",
+														"value": "10000",
+														"type": "text",
+														"disabled": true
+													},
+													{
+														"key": "Accept-Encoding",
+														"value": "gzip",
+														"disabled": true
+													},
+													{
+														"key": "Content-Encoding",
+														"value": "gzip",
+														"disabled": true
+													}
+												],
+												"body": {
+													"mode": "raw",
+													"raw": "{\n  \"operation\" : \"insert\",\n  \"object\" : \"Account\",\n  \"contentType\" : \"JSON\"\n}"
+												},
+												"url": {
+													"raw": "{{_urlEndpoint}}/services/async/51.0/job",
+													"host": [
+														"{{_urlEndpoint}}"
+													],
+													"path": [
+														"services",
+														"async",
+														"51.0",
+														"job"
+													]
+												}
+											},
+											"response": []
+										},
+										{
+											"name": "JSON Bulk Create Batch",
+											"event": [
+												{
+													"listen": "test",
+													"script": {
+														"exec": [
+															"if(pm.response.headers.get(\"Content-Type\").indexOf(\"xml\") !== -1) {",
+															"    var jsonData = xml2Json(pm.response.text());",
+															"    pm.environment.set(\"_batchId\", jsonData.batchInfo.id);    ",
+															"}",
+															"",
+															"if(pm.response.headers.get(\"Content-Type\").indexOf(\"json\") !== -1) {",
+															"    var jsonData = pm.response.json();",
+															"    pm.environment.set(\"_batchId\", jsonData.id);",
+															"}"
+														],
+														"type": "text/javascript"
+													}
+												}
+											],
+											"request": {
+												"method": "POST",
+												"header": [
+													{
+														"key": "X-SFDC-Session",
+														"value": "{{_accessToken}}"
+													},
+													{
+														"key": "Content-Type",
+														"value": "application/json"
+													},
+													{
+														"key": "Content-Type",
+														"value": "zip/csv",
+														"disabled": true
+													},
+													{
+														"key": "charset",
+														"value": "UTF-8"
+													},
+													{
+														"key": "Accept-Encoding",
+														"value": "gzip",
+														"disabled": true
+													},
+													{
+														"key": "Content-Encoding",
+														"value": "gzip",
+														"disabled": true
+													}
+												],
+												"body": {
+													"mode": "raw",
+													"raw": "[\r\n    {\r\n        \"name\": \"Teste Batch JSON\"\r\n    },\r\n    {\r\n        \"name\": \"Teste Batch JSON 2\"\r\n    }\r\n]",
+													"options": {
+														"raw": {
+															"language": "json"
+														}
+													}
+												},
+												"url": {
+													"raw": "{{_urlEndpoint}}/services/async/51.0/job/{{_batchJobId}}/batch",
+													"host": [
+														"{{_urlEndpoint}}"
+													],
+													"path": [
+														"services",
+														"async",
+														"51.0",
+														"job",
+														"{{_batchJobId}}",
+														"batch"
+													]
+												}
+											},
+											"response": []
+										}
+									]
+								},
+								{
+									"name": "Bulk Check Batch Status",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "X-SFDC-Session",
+												"value": "{{_accessToken}}"
+											},
+											{
+												"key": "Accept-Encoding",
+												"value": "gzip"
+											},
+											{
+												"key": "Content-Encoding",
+												"value": "gzip"
+											}
+										],
+										"url": {
+											"raw": "{{_urlEndpoint}}/services/async/{{version}}/job/{{_batchJobId}}/batch",
+											"host": [
+												"{{_urlEndpoint}}"
+											],
+											"path": [
+												"services",
+												"async",
+												"{{version}}",
+												"job",
+												"{{_batchJobId}}",
+												"batch"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Bulk Retrieve Batch Result",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "X-SFDC-Session",
+												"value": "{{_accessToken}}"
+											},
+											{
+												"key": "Accept-Encoding",
+												"value": "gzip"
+											},
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"url": {
+											"raw": "{{_urlEndpoint}}/services/async/{{version}}/job/{{_batchJobId}}/batch/{{_batchId}}/result",
+											"host": [
+												"{{_urlEndpoint}}"
+											],
+											"path": [
+												"services",
+												"async",
+												"{{version}}",
+												"job",
+												"{{_batchJobId}}",
+												"batch",
+												"{{_batchId}}",
+												"result"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Bulk Close Job",
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "X-SFDC-Session",
+												"value": "{{_accessToken}}"
+											},
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "charset",
+												"value": "UTF-8"
+											},
+											{
+												"key": "Accept-Encoding",
+												"value": "gzip",
+												"disabled": true
+											},
+											{
+												"key": "Content-Encoding",
+												"value": "gzip",
+												"disabled": true
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n   \"state\" : \"UploadComplete\"\n}"
+										},
+										"url": {
+											"raw": "{{_urlEndpoint}}/services/async/{{version}}/job/{{_batchJobId}}",
+											"host": [
+												"{{_urlEndpoint}}"
+											],
+											"path": [
+												"services",
+												"async",
+												"{{version}}",
+												"job",
+												"{{_batchJobId}}"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "V2",
+							"item": [
+								{
+									"name": "Create job",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"var response = JSON.parse(pm.response.text())",
+													"pm.environment.set(\"_batchJobId\", response.id);"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Authorization",
+												"value": "Bearer {{_accessToken}}",
+												"type": "text"
+											},
+											{
+												"key": "Content-Type",
+												"value": "application/json",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"object\" : \"Account\",\n  \"contentType\" : \"CSV\",\n  \"operation\" : \"insert\",\n  \"lineEnding\": \"CRLF\"\n}"
+										},
+										"url": {
+											"raw": "{{_urlEndpoint}}/services/data/v{{version}}/jobs/ingest",
+											"host": [
+												"{{_urlEndpoint}}"
+											],
+											"path": [
+												"services",
+												"data",
+												"v{{version}}",
+												"jobs",
+												"ingest"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Upload Job Data",
+									"request": {
+										"method": "PUT",
+										"header": [
+											{
+												"key": "Authorization",
+												"value": "Bearer {{_accessToken}}",
+												"type": "text"
+											},
+											{
+												"key": "Content-Type",
+												"value": "text/csv",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "name\r\nTeste Postman CSV V2 1\r\nTeste Postman CSV V2 2"
+										},
+										"url": {
+											"raw": "{{_urlEndpoint}}/services/data/v{{version}}/jobs/ingest/{{_batchJobId}}/batches",
+											"host": [
+												"{{_urlEndpoint}}"
+											],
+											"path": [
+												"services",
+												"data",
+												"v{{version}}",
+												"jobs",
+												"ingest",
+												"{{_batchJobId}}",
+												"batches"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Complete Upload",
+									"request": {
+										"method": "PATCH",
+										"header": [
+											{
+												"key": "Authorization",
+												"value": "Bearer {{_accessToken}}",
+												"type": "text"
+											},
+											{
+												"key": "Content-Type",
+												"value": "application/json",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n\t\"state\":\"UploadComplete\"\n}"
+										},
+										"url": {
+											"raw": "{{_urlEndpoint}}/services/data/v{{version}}/jobs/ingest/{{_batchJobId}}",
+											"host": [
+												"{{_urlEndpoint}}"
+											],
+											"path": [
+												"services",
+												"data",
+												"v{{version}}",
+												"jobs",
+												"ingest",
+												"{{_batchJobId}}"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Delete Job",
+									"request": {
+										"method": "DELETE",
+										"header": [
+											{
+												"key": "Authorization",
+												"value": "Bearer {{_accessToken}}",
+												"type": "text"
+											},
+											{
+												"key": "Content-Type",
+												"value": "application/json",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": ""
+										},
+										"url": {
+											"raw": "{{_urlEndpoint}}/services/data/v{{version}}/jobs/ingest/{{_batchJobId}}",
+											"host": [
+												"{{_urlEndpoint}}"
+											],
+											"path": [
+												"services",
+												"data",
+												"v{{version}}",
+												"jobs",
+												"ingest",
+												"{{_batchJobId}}"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Get Job Info",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Authorization",
+												"value": "Bearer {{_accessToken}}",
+												"type": "text"
+											},
+											{
+												"key": "Content-Type",
+												"value": "application/json",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{_urlEndpoint}}/services/data/v{{version}}/jobs/ingest/{{_batchJobId}}",
+											"host": [
+												"{{_urlEndpoint}}"
+											],
+											"path": [
+												"services",
+												"data",
+												"v{{version}}",
+												"jobs",
+												"ingest",
+												"{{_batchJobId}}"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Get All Jobs",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Authorization",
+												"value": "Bearer {{_accessToken}}",
+												"type": "text"
+											},
+											{
+												"key": "Content-Type",
+												"value": "application/json",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{_urlEndpoint}}/services/data/v{{version}}/jobs/ingest",
+											"host": [
+												"{{_urlEndpoint}}"
+											],
+											"path": [
+												"services",
+												"data",
+												"v{{version}}",
+												"jobs",
+												"ingest"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Get Job Successful Record Results",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Authorization",
+												"value": "Bearer {{_accessToken}}",
+												"type": "text"
+											},
+											{
+												"key": "Content-Type",
+												"value": "application/json",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{_urlEndpoint}}/services/data/v{{version}}/jobs/ingest/{{_batchJobId}}/successfulResults",
+											"host": [
+												"{{_urlEndpoint}}"
+											],
+											"path": [
+												"services",
+												"data",
+												"v{{version}}",
+												"jobs",
+												"ingest",
+												"{{_batchJobId}}",
+												"successfulResults"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Get Job Failed Record Results",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Authorization",
+												"value": "Bearer {{_accessToken}}",
+												"type": "text"
+											},
+											{
+												"key": "Content-Type",
+												"value": "application/json",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{_urlEndpoint}}/services/data/v{{version}}/jobs/ingest/{{_batchJobId}}/failedResults",
+											"host": [
+												"{{_urlEndpoint}}"
+											],
+											"path": [
+												"services",
+												"data",
+												"v{{version}}",
+												"jobs",
+												"ingest",
+												"{{_batchJobId}}",
+												"failedResults"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Get Job Unprocessed Record Results",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Authorization",
+												"value": "Bearer {{_accessToken}}",
+												"type": "text"
+											},
+											{
+												"key": "Content-Type",
+												"value": "application/json",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{_urlEndpoint}}/services/data/v{{version}}/jobs/ingest/{{_batchJobId}}/unprocessedrecords",
+											"host": [
+												"{{_urlEndpoint}}"
+											],
+											"path": [
+												"services",
+												"data",
+												"v{{version}}",
+												"jobs",
+												"ingest",
+												"{{_batchJobId}}",
+												"unprocessedrecords"
+											]
+										}
+									},
+									"response": []
+								}
+							],
+							"description": "Bulk API 2.0 provides a simple interface to quickly load large amounts of data into your Salesforce org and to perform bulk queries on your org data.\n\nBulk API 2.0 is available in API version 41.0 and later. Query jobs in Bulk API 2.0 are available in API version 47.0 and later.\n\n📚 [Bulk API 2.0 Documentation](https://developer.salesforce.com/docs/atlas.en-us.api_bulk_v2.meta/api_bulk_v2/introduction_bulk_api_2.htm)"
+						}
+					]
+				},
+				{
+					"name": "Chamada Apex Rest",
+					"item": [
+						{
+							"name": "Chamada APEX Rest",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{_accessToken}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{_urlEndpoint}}/services/apexrest/courseMulesoft?id=0015Y00002fuoCqQAI",
+									"host": [
+										"{{_urlEndpoint}}"
+									],
+									"path": [
+										"services",
+										"apexrest",
+										"courseMulesoft"
+									],
+									"query": [
+										{
+											"key": "id",
+											"value": "0015Y00002fuoCqQAI"
+										}
+									]
+								},
+								"description": "Executes the specified SOQL query.\n\nIf the query results are too large, the response contains the first batch of results and a query identifier in the nextRecordsUrl field of the response. The identifier can be used in an additional request to retrieve the next batch.\nhttps://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/resources_query.htm"
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Database",
+					"item": [
+						{
+							"name": "Consultar Registro",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{_accessToken}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{_urlEndpoint}}/services/data/v{{version}}/query/?q=SELECT+FIELDS(ALL)+from+Account+LIMIT+200",
+									"host": [
+										"{{_urlEndpoint}}"
+									],
+									"path": [
+										"services",
+										"data",
+										"v{{version}}",
+										"query",
+										""
+									],
+									"query": [
+										{
+											"key": "q",
+											"value": "SELECT+FIELDS(ALL)+from+Account+LIMIT+200",
+											"description": "A SOQL query. Note that you will need to replace spaces with “+” characters in your query string to create a valid URI. An example query parameter string might look like: “SELECT+Name+FROM+MyObject”. If the SOQL query string is invalid, a MALFORMED_QUERY response is returned."
+										}
+									]
+								},
+								"description": "Executes the specified SOQL query.\n\nIf the query results are too large, the response contains the first batch of results and a query identifier in the nextRecordsUrl field of the response. The identifier can be used in an additional request to retrieve the next batch.\nhttps://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/resources_query.htm"
+							},
+							"response": []
+						},
+						{
+							"name": "Criar registro",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{_accessToken}}",
+										"type": "text"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"Name\": \"Teste Postman Produto\",\n    \"AccountNumber\": \"0004\"\n}"
+								},
+								"url": {
+									"raw": "{{_urlEndpoint}}/services/data/v{{version}}/sobjects/Account",
+									"host": [
+										"{{_urlEndpoint}}"
+									],
+									"path": [
+										"services",
+										"data",
+										"v{{version}}",
+										"sobjects",
+										"Account"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Mulesoft",
+			"item": [
+				{
+					"name": "Rest",
+					"item": [
+						{
+							"name": "demo-01",
+							"item": [
+								{
+									"name": "Rest",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "http://{{url}}/course/api/rest/demo-01/rest",
+											"protocol": "http",
+											"host": [
+												"{{url}}"
+											],
+											"path": [
+												"course",
+												"api",
+												"rest",
+												"demo-01",
+												"rest"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Soap",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "http://{{url}}/course/api/rest/demo-01/soap",
+											"protocol": "http",
+											"host": [
+												"{{url}}"
+											],
+											"path": [
+												"course",
+												"api",
+												"rest",
+												"demo-01",
+												"soap"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "demo-02",
+							"item": [
+								{
+									"name": "Inserir Registro",
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\r\n    \"nome\": \"Teste Mulesoft 2\",\r\n    \"numero_conta\": \"0005\"\r\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "http://{{url}}/course/api/rest/demo-02/insert",
+											"protocol": "http",
+											"host": [
+												"{{url}}"
+											],
+											"path": [
+												"course",
+												"api",
+												"rest",
+												"demo-02",
+												"insert"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "demo-03",
+							"item": [
+								{
+									"name": "Consultar Registro",
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\r\n    \"select\": \"SELECT FIELDS(ALL) from Account LIMIT 200\"\r\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "http://{{url}}/course/api/rest/demo-03/consultar",
+											"protocol": "http",
+											"host": [
+												"{{url}}"
+											],
+											"path": [
+												"course",
+												"api",
+												"rest",
+												"demo-03",
+												"consultar"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "demo-04",
+							"item": [
+								{
+									"name": "Batch V2",
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "[\r\n    {\r\n        \"nome\": \"Teste Batch V2 Mulesoft\"\r\n    }\r\n]",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "http://{{url}}/course/api/rest/demo-04/batch/v2",
+											"protocol": "http",
+											"host": [
+												"{{url}}"
+											],
+											"path": [
+												"course",
+												"api",
+												"rest",
+												"demo-04",
+												"batch",
+												"v2"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "demo-05",
+							"item": [
+								{
+									"name": "Get Account",
+									"request": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "http://{{url}}/course/api/rest/demo-05/{id}",
+											"protocol": "http",
+											"host": [
+												"{{url}}"
+											],
+											"path": [
+												"course",
+												"api",
+												"rest",
+												"demo-05",
+												"{id}"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						}
+					]
+				},
+				{
+					"name": "Components",
+					"item": [
+						{
+							"name": "cdemo-01",
+							"item": [
+								{
+									"name": "Get User",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "http://{{url}}/course/api/component/demo-01",
+											"protocol": "http",
+											"host": [
+												"{{url}}"
+											],
+											"path": [
+												"course",
+												"api",
+												"component",
+												"demo-01"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "cdemo-02",
+							"item": [
+								{
+									"name": "Post Account",
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "[\r\n    {\r\n        \"nome\": \"Teste Component Mulesoft\"\r\n    },\r\n    {\r\n        \"nome\": \"Teste Component Mulesoft 2\"\r\n    }\r\n]"
+										},
+										"url": {
+											"raw": "http://{{url}}/course/api/component/demo-02",
+											"protocol": "http",
+											"host": [
+												"{{url}}"
+											],
+											"path": [
+												"course",
+												"api",
+												"component",
+												"demo-02"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "cdemo-03",
+							"item": [
+								{
+									"name": "Query",
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\r\n    \"select\": \"SELECT id, name from Account LIMIT 200\"\r\n}"
+										},
+										"url": {
+											"raw": "http://{{url}}/course/api/component/demo-03",
+											"protocol": "http",
+											"host": [
+												"{{url}}"
+											],
+											"path": [
+												"course",
+												"api",
+												"component",
+												"demo-03"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "cdemo-04",
+							"item": [
+								{
+									"name": "Bulk Account",
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "[\r\n    {\r\n        \"nome\": \"Teste Bulk Component Mulesoft\"\r\n    },\r\n    {\r\n        \"nome\": \"Teste Bulk Component Mulesoft 2\"\r\n    }\r\n]"
+										},
+										"url": {
+											"raw": "http://{{url}}/course/api/component/demo-04",
+											"protocol": "http",
+											"host": [
+												"{{url}}"
+											],
+											"path": [
+												"course",
+												"api",
+												"component",
+												"demo-04"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "cdemo-05",
+							"item": [
+								{
+									"name": "Get Account",
+									"request": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "http://{{url}}/course/api/component/demo-05/{id}",
+											"protocol": "http",
+											"host": [
+												"{{url}}"
+											],
+											"path": [
+												"course",
+												"api",
+												"component",
+												"demo-05",
+												"{id}"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						}
+					]
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "_accessToken",
+			"value": ""
+		},
+		{
+			"key": "_urlEndpoint",
+			"value": ""
+		},
+		{
+			"key": "_batchJobId",
+			"value": ""
+		},
+		{
+			"key": "_batchId",
+			"value": ""
+		}
+	]
+}

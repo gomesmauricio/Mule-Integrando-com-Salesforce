@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<flow name="demo-05-flow" doc:id="638e3fc6-e4ee-4e32-a082-4c21529a10bd" >
+		<set-variable value="#[attributes.uriParams.id]" doc:name="Id" doc:id="48a7aef9-426a-4ce7-a34c-92ed6b18afd7" variableName="id"/>
+		<flow-ref doc:name="Login" doc:id="9b6c536f-7427-4aa2-911c-c94333b0f4a7" name="demo-01-rest-flow" target="sfdc_token" targetValue="#[payload.access_token]"/>
+		<http:request method="GET" doc:name="Consulta REST" doc:id="4b99f09d-03e5-4ac3-acf7-8142afb57ecf" config-ref="SFDC_ENDPOINT" path="/services/apexrest/courseMulesoft">
+			<http:body ><![CDATA[#[{}]]]></http:body>
+			<http:headers ><![CDATA[#[{
+	Authorization: "Bearer " ++ vars.sfdc_token as String
+}]]]></http:headers>
+			<http:query-params ><![CDATA[#[{
+	id: vars.id
+}]]]></http:query-params>
+		</http:request>
+		<ee:transform doc:name="Transform Message" doc:id="f4398c94-0df4-4f84-b9fd-b9b35b1c17d4" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload[0] - "attributes"]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+</mule>
